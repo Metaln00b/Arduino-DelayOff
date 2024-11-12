@@ -1,43 +1,29 @@
 #include <Arduino.h>
 
-const byte inputPin = 2;
-const byte outputPin = 3;
+const byte inputPin = 1;  // PB1 auf dem ATtiny85
+const byte outputPin = 2; // PB2 auf dem ATtiny85
 
-volatile bool inputState = false;
-volatile unsigned long lastHighTime;
-
-void countPulses() {
-  inputState = true;
-  lastHighTime = millis();
-}
+unsigned long delayOff = 45000;
+unsigned long lastHighTime;
 
 void setup() {
     pinMode(inputPin, INPUT);
     pinMode(outputPin, OUTPUT);
 
-    // Set up external interrupt on PB2 (INT0)
-    GIMSK |= (1 << INT0);  // Enable INT0
-    MCUCR |= (1 << ISC01) | (1 << ISC00); // Trigger on rising edge
-
-    lastHighTime = millis();
-    sei(); // Enable global interrupts
-}
-
-ISR(INT0_vect) {
-    inputState = true;
+    digitalWrite(outputPin, LOW);  // Ensure output pin starts LOW
     lastHighTime = millis();
 }
 
 void loop() {
     unsigned long currentMillis = millis();
+    bool currentInputState = digitalRead(inputPin);
 
-    if (inputState) {
+    if (currentInputState == HIGH) {
+        lastHighTime = currentMillis;
         digitalWrite(outputPin, HIGH);
     }
 
-    if (currentMillis - lastHighTime >= 10000) {
-        // Reset output pin and input state
+    if (currentMillis - lastHighTime >= delayOff) {
         digitalWrite(outputPin, LOW);
-        inputState = false;
     }
 }
